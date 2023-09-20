@@ -18,7 +18,7 @@ func TestStart(t *testing.T) {
 	t.Run("successful", func(t *testing.T) {
 		ctx := context.Background()
 
-		// disabling Reaper as issues with Podman local configuration
+		// disabling Reaper if issue with Podman local configuration
 		//os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 		// to be able to run the tests with Podman (might require `podman machine set --rootful`)
