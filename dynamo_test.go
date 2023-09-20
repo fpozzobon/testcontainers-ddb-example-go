@@ -7,9 +7,9 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/localstack"
-	"log"
 	"os"
 	"testing"
 )
@@ -29,21 +29,17 @@ func TestStart(t *testing.T) {
 		localstackContainer, err := localstack.RunContainer(ctx,
 			testcontainers.WithImage("localstack/localstack:1.4.0"),
 		)
-		if err != nil {
-			log.Fatalf("localstack.RunContainer: %v", err)
-		}
+		require.NoError(t, err)
 
 		// Clean up the container
 		defer func() {
 			if err := localstackContainer.Terminate(ctx); err != nil {
-				log.Fatalf("localstackContainer.Terminate: %v", err)
+				require.Fail(t, "localstackContainer.Terminate: %v", err)
 			}
 		}()
 
 		port, err := localstackContainer.MappedPort(ctx, "4566/tcp")
-		if err != nil {
-			log.Fatalf("localstackContainer.MappedPort: %v", err)
-		}
+		require.NoError(t, err)
 
 		// Retrieving from local config dynamo client
 		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
@@ -53,16 +49,14 @@ func TestStart(t *testing.T) {
 		})
 
 		awsConf, err := awsConfig.LoadDefaultConfig(context.TODO(), awsConfig.WithEndpointResolverWithOptions(customResolver))
-		if err != nil {
-			log.Fatalf("awsConfig.LoadDefaultConfig with resolver: %v", err)
-		}
+		require.NoError(t, err)
+
 		dynamoCli := dynamodb.NewFromConfig(awsConf)
 		if dynamoCli == nil {
-			log.Fatalf("dynamodb.NewFromConfig: %v", err)
+			require.Fail(t, "dynamoCli nil")
 		}
-		if err = createTable(dynamoCli); err != nil {
-			log.Fatalf("p.CreateTable: %v", err)
-		}
+		err = createTable(dynamoCli)
+		require.NoError(t, err)
 
 	})
 
